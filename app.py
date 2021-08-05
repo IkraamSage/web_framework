@@ -49,7 +49,7 @@ def init_product_table():
                      "title TEXT NOT NULL,"
                      "description TEXT NOT NULL,"
                      "price TEXT NOT NULL,"
-                     "category TEXT NOT NULL"
+                     "category TEXT NOT NULL,"
                      "date_created TEXT NOT NULL)")
     print("blog table created successfully.")
 
@@ -75,15 +75,11 @@ def identity(payload):
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'super-secret'
+app.config['JWT_EXPIRATION_DELTA'] = datetime.timedelta(seconds=4000)
+
 CORS(app)
 
 jwt = JWT(app, authenticate, identity)
-
-
-@app.route('/protected')
-@jwt_required()
-def protected():
-    return '%s' % current_identity
 
 
 @app.route('/user-registration/', methods=["POST"])
@@ -111,7 +107,6 @@ def user_registration():
 
 
 @app.route('/add-product/', methods=["POST"])
-@jwt_required()
 def add_product():
     response = {}
 
@@ -124,7 +119,7 @@ def add_product():
 
         with sqlite3.connect('products.db') as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO post("
+            cursor.execute("INSERT INTO product("
                            "title,"
                            "description,"
                            "price,"
@@ -151,7 +146,7 @@ def get_cart():
 
 
 @app.route("/remove-product/<int:product_id>")
-@jwt_required()
+# @jwt_required()
 def remove_product(product_id):
     response = {}
     with sqlite3.connect("products.db") as conn:
@@ -161,6 +156,58 @@ def remove_product(product_id):
         response['status_code'] = 200
         response['message'] = "Product removed successfully."
     return response
+
+
+@app.route('/view/')
+def view_products():
+    response = {}
+
+    with sqlite3.connect("products.db") as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM product")
+
+        products = cursor.fetchall()
+
+    response['status_code'] = 200
+    response['data'] = products
+    return response
+
+@app.route('/protected')
+# @jwt_required()
+def protected():
+    return '%s' % current_identity
+
+
+# @app.route('/updating/<int:product_id>/', methods=["PUT"])
+# def updating_products(product_id):
+#     response = {}
+#
+#     if request.method == "PUT":
+#         with sqlite3.connect('products.db') as conn:
+#             print(request.json)
+#             incoming_data = dict(request.json)
+#             put_data = {}
+#
+#             if incoming_data.get("category") is not None:
+#                 put_data["category"] = incoming_data.get("category")
+#
+#                 with sqlite3.connect('products.db') as connection:
+#                     cursor = connection.cursor()
+#                     cursor.execute("UPDATE product SET category =? WHERE product_id=?", (put_data["category"],
+#                                                                                          product_id))
+#             elif incoming_data.get("title") is not None:
+#                 put_data["title"] = incoming_data.get("title")
+#
+#                 with sqlite3.connect('products.db') as connection:
+#                     cursor = connection.cursor()
+#                     cursor.execute("UPDATE product SET title =? WHERE product_id=?",
+#                                    (put_data["title"], product_id))
+#
+#                     conn.commit()
+#                     response['message'] = "Update was successfully"
+#                     response['status_code'] = 200
+#     return response
+
 
 if __name__ == "__main__":
     app.run()
