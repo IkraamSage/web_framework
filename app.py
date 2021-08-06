@@ -5,6 +5,7 @@ import datetime
 from flask import Flask, request
 from flask_jwt import JWT, jwt_required, current_identity
 from flask_cors import CORS
+from flask_mail import Mail, Message
 
 
 class User(object):
@@ -111,8 +112,8 @@ def user_registration():
             response["message"] = "success"
             response["status_code"] = 201
             if response["status_code"] == 201:
-                msg = Message("Hello Message", sender="ikraampubg123@gmail.com", recipients=[email])
-                msg.body = "My email using Flask"
+                msg = Message("Hello", sender="ikraampubg123@gmail.com", recipients=[email])
+                msg.body = "Hi ,how you doing"
                 mail.send(msg)
                 return "Message sent"
 
