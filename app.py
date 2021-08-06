@@ -1,12 +1,13 @@
 import hmac
 import sqlite3
 import datetime
-
+# importing
 from flask import Flask, request
 from flask_jwt import JWT, jwt_required, current_identity
 from flask_cors import CORS
 from flask_mail import Mail, Message
 
+# OOP for username password
 
 class User(object):
     def __init__(self, id, username, password):
@@ -14,6 +15,7 @@ class User(object):
         self.username = username
         self.password = password
 
+# defining functions for sqlite
 
 def fetch_users():
     with sqlite3.connect('products.db') as conn:
@@ -30,6 +32,7 @@ def fetch_users():
 
 users = fetch_users()
 
+# sqlite functions
 
 def init_user_table():
     conn = sqlite3.connect('products.db')
@@ -61,6 +64,7 @@ init_product_table()
 username_table = {u.username: u for u in users}
 userid_table = {u.id: u for u in users}
 
+# defining token functions
 
 def authenticate(username, password):
     user = username_table.get(username, None)
@@ -88,6 +92,7 @@ mail = Mail(app)
 
 jwt = JWT(app, authenticate, identity)
 
+# making app route for registration
 
 @app.route('/user-registration/', methods=["POST"])
 def user_registration():
@@ -117,6 +122,7 @@ def user_registration():
                 mail.send(msg)
                 return "Message sent"
 
+# making app route for adding products
 
 @app.route('/add-product/', methods=["POST"])
 def add_product():
@@ -142,6 +148,7 @@ def add_product():
             response['description'] = "Product added successfully"
         return response
 
+# defing app route for cart
 
 @app.route('/get-cart/', methods=["GET"])
 def get_cart():
@@ -156,6 +163,7 @@ def get_cart():
     response['data'] = products
     return response
 
+# defining app route for removing products
 
 @app.route("/remove-product/<int:product_id>")
 @jwt_required()
@@ -191,7 +199,7 @@ def protected():
 
 
 @app.route('/updating/<int:product_id>/', methods=["PUT"])
-# @jwt_required()
+@jwt_required()
 def edit_product(product_id):
     response = {}
 
