@@ -76,8 +76,14 @@ app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'super-secret'
 app.config['JWT_EXPIRATION_DELTA'] = datetime.timedelta(seconds=4000)
-
 CORS(app)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = "ikraampubg123@gmail.com"
+app.config['MAIL_PASSWORD'] = "ikraam50"
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+mail = Mail(app)
 
 jwt = JWT(app, authenticate, identity)
 
@@ -92,6 +98,7 @@ def user_registration():
         last_name = request.form['last_name']
         username = request.form['username']
         password = request.form['password']
+        email = request.form['email']
 
         with sqlite3.connect("products.db") as conn:
             cursor = conn.cursor()
@@ -103,7 +110,11 @@ def user_registration():
             conn.commit()
             response["message"] = "success"
             response["status_code"] = 201
-        return response
+            if response["status_code"] == 201:
+                msg = Message("Hello Message", sender="ikraampubg123@gmail.com", recipients=[email])
+                msg.body = "My email using Flask"
+                mail.send(msg)
+                return "Message sent"
 
 
 @app.route('/add-product/', methods=["POST"])
@@ -146,7 +157,7 @@ def get_cart():
 
 
 @app.route("/remove-product/<int:product_id>")
-# @jwt_required()
+@jwt_required()
 def remove_product(product_id):
     response = {}
     with sqlite3.connect("products.db") as conn:
@@ -173,40 +184,60 @@ def view_products():
     return response
 
 @app.route('/protected')
-# @jwt_required()
+@jwt_required()
 def protected():
     return '%s' % current_identity
 
 
-# @app.route('/updating/<int:product_id>/', methods=["PUT"])
-# def updating_products(product_id):
-#     response = {}
-#
-#     if request.method == "PUT":
-#         with sqlite3.connect('products.db') as conn:
-#             print(request.json)
-#             incoming_data = dict(request.json)
-#             put_data = {}
-#
-#             if incoming_data.get("category") is not None:
-#                 put_data["category"] = incoming_data.get("category")
-#
-#                 with sqlite3.connect('products.db') as connection:
-#                     cursor = connection.cursor()
-#                     cursor.execute("UPDATE product SET category =? WHERE product_id=?", (put_data["category"],
-#                                                                                          product_id))
-#             elif incoming_data.get("title") is not None:
-#                 put_data["title"] = incoming_data.get("title")
-#
-#                 with sqlite3.connect('products.db') as connection:
-#                     cursor = connection.cursor()
-#                     cursor.execute("UPDATE product SET title =? WHERE product_id=?",
-#                                    (put_data["title"], product_id))
-#
-#                     conn.commit()
-#                     response['message'] = "Update was successfully"
-#                     response['status_code'] = 200
-#     return response
+@app.route('/updating/<int:product_id>/', methods=["PUT"])
+# @jwt_required()
+def edit_product(product_id):
+    response = {}
+
+    if request.method == "PUT":
+        with sqlite3.connect('products.db') as conn:
+            incoming_data = dict(request.json)
+            put_data = {}
+
+            if incoming_data.get("title") is not None:
+                put_data["title"] = incoming_data.get("title")
+                with sqlite3.connect('products.db') as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE product SET title =? WHERE id=?", (put_data["title"], product_id))
+                    conn.commit()
+                    response['message'] = "Update to title was successful"
+                    response['status_code'] = 200
+            if incoming_data.get("description") is not None:
+                put_data['description'] = incoming_data.get('description')
+
+                with sqlite3.connect('products.db') as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE product SET description =? WHERE id=?", (put_data["description"], product_id))
+                    conn.commit()
+
+                    response["description"] = "Update to description successful"
+                    response["status_code"] = 200
+            if incoming_data.get("price") is not None:
+                put_data['price'] = incoming_data.get('price')
+
+                with sqlite3.connect('products.db') as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE product SET price =? WHERE id=?", (put_data["price"], product_id))
+                    conn.commit()
+
+                    response["price"] = "Update to price was successful"
+                    response["status_code"] = 200
+            if incoming_data.get("category") is not None:
+                put_data['category'] = incoming_data.get('category')
+
+                with sqlite3.connect('products.db') as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE product SET category =? WHERE id=?", (put_data["category"], product_id))
+                    conn.commit()
+
+                    response["category"] = "Update to category was successful"
+                    response["status_code"] = 200
+    return response
 
 
 if __name__ == "__main__":
